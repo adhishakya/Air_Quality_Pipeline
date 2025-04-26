@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 import pandas as pd
 from pandas import json_normalize
 import psycopg2
+import logging
+
+logging.basicConfig(level = logging.INFO)
 
 load_dotenv()
 
@@ -17,10 +20,16 @@ db_port = os.getenv('DB_PORT')
 search_city = 'Kathmandu'
 search_state = 'Central Region'
 search_country = 'Nepal'
-
 url = f'http://api.airvisual.com/v2/city?city={search_city}&state={search_state}&country={search_country}&key={api_key}'
-response = requests.get(url)
-json_response = response.json()
+
+try:
+    response = requests.get(url)
+    response.raise_for_status()  
+    json_response = response.json()
+
+except Exception as e:
+    logging.error(f"Error fetching data from API: {e}")
+    exit()
 
 df = json_normalize(json_response['data'])
 df.columns = df.columns.str.replace('.','_')
@@ -65,40 +74,51 @@ df_filtered = df_filtered.rename(columns={
 
 data = df_filtered.to_dict(orient='records')
 
-conn = psycopg2.connect(
-    database = db_name,
-    user = db_user,
-    password = db_password,
-    host = db_host,
-    port = db_port
-)
-cursor = conn.cursor()
+try:
+    with psycopg2.connect(
+        database = db_name,
+        user = db_user,
+        password = db_password,
+        host = db_host,
+        port = db_port
+    ) as conn:
+        with conn.cursor() as cursor:
+            try:
+                with open('sql/create_table.sql', 'r') as file:
+                    create_table_query = file.read()
+                
+                with open('sql/insert_data.sql', 'r') as file:
+                    insert_data_query = file.read()
+            
+            except FileNotFoundError as e:
+                logging.error(f'SQL file not found: {e}')
+                exit()
 
-query =  '''
-    CREATE TABLE IF NOT EXISTS air_quality (
-        id SERIAL PRIMARY KEY,
-        city VARCHAR(50),
-        country VARCHAR(50),
-        aqi INT,
-        weather_timestamp TIMESTAMP,
-        remarks VARCHAR(50)
-    );
-    INSERT INTO air_quality(city, country, aqi, weather_timestamp, remarks)
-    VALUES (%s, %s, %s, %s, %s);
-    '''
+            except Exception as e:
+                logging.error(f'Error reading SQL file: {e}')
+                exit()
 
-values = [
-    (
-        value['City'],
-        value['Country'],
-        value['AQI'],
-        value['Timestamp'],
-        value['Remarks']
-    )
-    for value in data
-]
+            cursor.execute(create_table_query)
+            logging.info('Table exists or created successfully')
 
-cursor.executemany(query, values)
-conn.commit()
-print('Data inserted successfully')
-conn.close()
+            values = [
+                (
+                    value['City'],
+                    value['Country'],
+                    value['AQI'],
+                    value['Timestamp'],
+                    value['Remarks']
+                )
+                for value in data
+            ]
+
+            try:    
+                cursor.executemany(insert_data_query, values)
+                conn.commit()
+                logging.info('Data inserted successfully')
+            except Exception as e:
+                logging.error(f'Error inserting data: {e}')
+                exit()
+
+except Exception as e:
+    logging.error(f'Error while inserting data into database: {e}')
