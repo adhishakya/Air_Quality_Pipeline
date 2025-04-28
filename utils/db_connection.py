@@ -11,6 +11,7 @@ def get_db_connection():
     db_port = os.getenv('DB_PORT')
 
     try:
+        # Establish a connection to the PostgreSQL database
         conn = psycopg2.connect(
             database=db_name,
             user=db_user,
