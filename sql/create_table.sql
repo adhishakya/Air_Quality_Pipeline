@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS air_quality (
     city VARCHAR(50),
     country VARCHAR(50),
     aqi INT,
-    weather_timestamp TIMESTAMP,
-    remarks VARCHAR(50)
+    aqi_timestamp TIMESTAMP,
+    remarks VARCHAR(50),
+    UNIQUE(city, aqi_timestamp)
 );
