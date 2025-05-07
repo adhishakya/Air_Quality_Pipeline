@@ -2,7 +2,9 @@ import pandas as pd
 from pandas import json_normalize
 from utils.aqi_remarks import get_remarks
 
-def transform_data(json_response):
+def transform_data(ti):
+    json_response = ti.xcom_pull(task_ids='extract_data')
+
     df = json_normalize(json_response['data'])
     df.columns = df.columns.str.replace('.','_')
 

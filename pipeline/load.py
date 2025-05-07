@@ -2,7 +2,9 @@ import logging
 from utils.db_connection import get_db_connection
 from utils.load_queries import load_queries
 
-def load_data(json_data):
+def load_data(ti):
+    json_data = ti.xcom_pull(task_ids='transform_data')
+
     try:
         with get_db_connection() as conn: 
             with conn.cursor() as cursor: 
