@@ -31,4 +31,6 @@ def transform_data(ti):
         'remarks': 'Remarks'
     })
 
+    df_filtered['AQI_Timestamp'] = df_filtered['AQI_Timestamp'].astype(str)
+
     return df_filtered.to_dict(orient='records')
