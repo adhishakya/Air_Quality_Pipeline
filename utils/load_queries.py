@@ -9,11 +9,9 @@ def load_queries():
 
         with open(os.path.join(sql_dir,'create_table.sql'), 'r') as file:
             create_table_query = file.read()
-            print(create_table_query)
 
         with open(os.path.join(sql_dir,'insert_data.sql'), 'r') as file:
             insert_data_query = file.read()
-            print(insert_data_query)
         
         return create_table_query, insert_data_query
     

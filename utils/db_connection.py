@@ -1,6 +1,9 @@
 import os
 from dotenv import load_dotenv
 import psycopg2
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 def get_db_connection():
     load_dotenv()
@@ -22,5 +25,5 @@ def get_db_connection():
         return conn
     
     except Exception as e:
-        print(f"Error connecting to the database: {e}")
+        logging.error(f"Error connecting to the database: {e}")
         exit()
